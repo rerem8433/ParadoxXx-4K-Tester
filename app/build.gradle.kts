@@ -11,8 +11,10 @@ android {
         applicationId = "fr.paradoxxx.tester4k"
         minSdk = 21
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "1.4"
+        // Seulement FR/EN : évite d'embarquer les ~90 langues d'AppCompat
+        resourceConfigurations += listOf("fr", "en")
     }
 
     // Clé fixe fournie par GitHub Actions (secrets) ; sinon repli sur la clé debug
