@@ -133,7 +133,8 @@ class MainActivity : AppCompatActivity() {
             }
 
             lastResults = out
-            lastSummary = Verdict.summary(out, net, conn, displayHdr10())
+            val hdmi = HdmiInfo.read()
+            lastSummary = Verdict.summary(out, net, conn, displayHdr10(), hdmi)
             lastLog = LogBuilder.build(this@MainActivity, out, lastSummary, net, conn)
             saveLog(lastLog)
             showDetails = false

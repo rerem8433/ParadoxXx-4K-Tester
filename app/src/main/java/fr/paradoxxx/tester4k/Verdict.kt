@@ -67,19 +67,24 @@ object Verdict {
                 o.decoderName == null -> Status.UNSUPPORTED
                 else -> Status.STUTTER
             }
+            // Le réseau n'est en cause que s'il y a eu des coupures (mise en mémoire tampon)
             o.rebuffers > 0 && netTooSlow -> Status.NETWORK
             o.fps >= target * 0.92 && o.rebuffers == 0 -> Status.OK
             o.fps >= MIN_FPS && o.rebuffers <= 1 -> Status.MINOR
-            netTooSlow -> Status.NETWORK
             else -> Status.STUTTER
         }
 
-        // Dolby Vision lu via la couche HDR10 de compatibilité
-        if (t.dolbyVision && (status == Status.OK || status == Status.MINOR)) {
+        // Dolby Vision : sans décodeur DV, le lecteur se rabat sur la couche HEVC/HDR10
+        var finalDetail = detail
+        if (t.dolbyVision && status != Status.UNAVAILABLE && status != Status.NETWORK) {
             val n = o.decoderName?.lowercase() ?: ""
-            if (!(n.contains("dolby") || n.contains("dvhe") || n.contains(".dv"))) status = Status.FALLBACK
+            val realDv = n.contains("dolby") || n.contains("dvhe") || n.contains(".dv")
+            if (!realDv) {
+                status = if (o.firstFrame && o.fps >= MIN_FPS) Status.FALLBACK else Status.UNSUPPORTED
+                finalDetail = "Pas de décodeur Dolby Vision · lu en HEVC/HDR10 à la place · $detail"
+            }
         }
-        return TestResult(t, status, detail, probe, o)
+        return TestResult(t, status, finalDetail, probe, o)
     }
 
     // ---------- Résumé grand public ----------
@@ -88,15 +93,32 @@ object Verdict {
         results: List<TestResult>,
         net: NetworkProbe.Result,
         conn: NetworkProbe.Connection,
-        hdrDisplay: Boolean?
+        hdrDisplay: Boolean?,
+        hdmi: HdmiInfo.Mode? = null
     ): List<SummaryLine> {
         val lines = mutableListOf<SummaryLine>()
+
+        // Avertissement en tête : sortie HDMI en 24/25/30 Hz
+        if (hdmi != null && hdmi.hz != null && hdmi.hz < 50) {
+            lines += SummaryLine("⚠️", "Sortie HDMI en ${HdmiInfo.label(hdmi)}",
+                "Les vidéos en 50/60 images par seconde seront saccadées et les résultats 4K faussés. " +
+                "Réglez la résolution sur une valeur en 60 Hz (ex. 1920x1080p60) dans " +
+                "Paramètres › Affichage › HDMI, puis refaites le test.")
+        }
+
         lines += groupLine(results, Group.FHD, "Full HD (1080p)")
         lines += groupLine(results, Group.UHD, "4K")
 
         val hdr = groupLine(results, Group.HDR10, "HDR10")
-        val hdrNote = if (hdrDisplay == false && (hdr.icon == "✅" || hdr.icon == "⚠️"))
-            " · Votre écran ne signale pas le HDR : l'image sera convertie." else ""
+        val hdrUhdKo = results.any { it.test.group == Group.HDR10 && it.test.is4kOrMore && it.status == Status.STUTTER }
+        val sdrUhdOk = results.any { it.test.group == Group.UHD && it.test.tenBit && it.status.rank >= Status.MINOR.rank }
+        val hdrNote = when {
+            hdrUhdKo && sdrUhdOk && hdrDisplay != true ->
+                " · En 4K, la conversion HDR → image normale (votre écran ne signale pas le HDR) est trop lourde pour ce boîtier."
+            hdrDisplay == false && (hdr.icon == "✅" || hdr.icon == "⚠️") ->
+                " · Votre écran ne signale pas le HDR : l'image sera convertie."
+            else -> ""
+        }
         lines += hdr.copy(text = hdr.text + hdrNote)
 
         lines += groupLine(results, Group.DOLBY, "Dolby Vision")
@@ -120,7 +142,8 @@ object Verdict {
             Status.FALLBACK -> "Non, mais la vidéo est lue en HDR10 à la place"
             Status.NETWORK -> "Impossible à vérifier : la connexion est trop lente pour ce format"
             Status.STUTTER -> "Non : le boîtier n'est pas assez puissant (image saccadée)"
-            Status.UNSUPPORTED -> "Non : format non pris en charge par ce boîtier"
+            Status.UNSUPPORTED -> if (g == Group.DOLBY) "Non : pas de Dolby Vision sur ce boîtier"
+                else "Non : format non pris en charge par ce boîtier"
             Status.UNAVAILABLE -> "Test impossible (vidéo de test indisponible)"
         }
         val partial = rs.any { it.status.rank < Status.MINOR.rank } && best.status.rank >= Status.MINOR.rank

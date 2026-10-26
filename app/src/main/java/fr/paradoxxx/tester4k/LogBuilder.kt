@@ -36,6 +36,7 @@ object LogBuilder {
         appendLine("CPU ABI   : ${Build.SUPPORTED_ABIS.joinToString()} · ${Runtime.getRuntime().availableProcessors()} cœurs")
         appendLine("RAM       : ${ramMb(ctx)} Mo")
         appendLine("Écran     : ${display(ctx)}")
+        appendLine("HDMI      : " + (HdmiInfo.read()?.raw ?: "mode non lisible"))
         appendLine("Firmware  : ${Build.DISPLAY}")
         appendLine()
 
