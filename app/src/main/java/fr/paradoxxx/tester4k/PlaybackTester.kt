@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.SystemClock
 import androidx.annotation.OptIn
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -16,8 +17,9 @@ import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.delay
 
 /**
- * Lit une vidéo en streaming pendant [playMs] de lecture effective
- * et relève ce qui s'est passé : décodeur utilisé, images perdues, coupures, erreurs.
+ * Lit une vidéo en streaming pendant [playMs] de lecture effective et relève :
+ * décodeur utilisé, images par seconde réellement affichées (après 2 s de chauffe),
+ * images perdues, coupures, erreurs.
  */
 @OptIn(UnstableApi::class)
 class PlaybackTester(private val ctx: Context, private val view: PlayerView) {
@@ -25,8 +27,11 @@ class PlaybackTester(private val ctx: Context, private val view: PlayerView) {
     data class Outcome(
         val firstFrame: Boolean,
         val playedMs: Long,
-        val rendered: Int,
-        val dropped: Int,
+        val rendered: Int,        // images affichées sur la période mesurée
+        val dropped: Int,         // images perdues sur la période mesurée
+        val measuredMs: Long,     // durée de la période mesurée (hors chauffe)
+        val fps: Double,          // images/s réellement affichées
+        val contentFps: Double,   // images/s de la vidéo
         val rebuffers: Int,
         val decoderName: String?,
         val errorCode: Int?,
@@ -38,6 +43,7 @@ class PlaybackTester(private val ctx: Context, private val view: PlayerView) {
     suspend fun run(
         url: String,
         playMs: Long = 10_000,
+        warmupMs: Long = 2_000,
         startTimeoutMs: Long = 15_000,
         maxTotalMs: Long = 30_000,
         onTick: (playedMs: Long) -> Unit = {}
@@ -48,7 +54,6 @@ class PlaybackTester(private val ctx: Context, private val view: PlayerView) {
         player.volume = 0f
 
         var decoder: String? = null
-        var droppedEvents = 0
         var firstFrame = false
         var error: PlaybackException? = null
         var unsupported = false
@@ -61,12 +66,6 @@ class PlaybackTester(private val ctx: Context, private val view: PlayerView) {
                 initializedTimestampMs: Long,
                 initializationDurationMs: Long
             ) { decoder = decoderName }
-
-            override fun onDroppedVideoFrames(
-                eventTime: AnalyticsListener.EventTime,
-                droppedFrames: Int,
-                elapsedMs: Long
-            ) { droppedEvents += droppedFrames }
 
             override fun onRenderedFirstFrame(
                 eventTime: AnalyticsListener.EventTime,
@@ -98,6 +97,12 @@ class PlaybackTester(private val ctx: Context, private val view: PlayerView) {
         var played = 0L
         var timedOut = false
 
+        // Instantané des compteurs à la fin de la chauffe
+        var warm = false
+        var r0 = 0
+        var d0 = 0
+        var playedAtWarm = 0L
+
         try {
             while (true) {
                 delay(200)
@@ -106,6 +111,15 @@ class PlaybackTester(private val ctx: Context, private val view: PlayerView) {
                 last = now
                 onTick(played)
 
+                if (!warm && played >= warmupMs) {
+                    val c = player.videoDecoderCounters
+                    c?.ensureUpdated()
+                    r0 = c?.renderedOutputBufferCount ?: 0
+                    d0 = c?.droppedBufferCount ?: 0
+                    playedAtWarm = played
+                    warm = true
+                }
+
                 if (error != null || unsupported) break
                 if (player.playbackState == Player.STATE_ENDED) break
                 if (played >= playMs) break
@@ -113,16 +127,40 @@ class PlaybackTester(private val ctx: Context, private val view: PlayerView) {
                 if (now - t0 > maxTotalMs) { timedOut = true; break }
             }
 
-            val counters = player.videoDecoderCounters
-            counters?.ensureUpdated()
-            val rendered = counters?.renderedOutputBufferCount ?: 0
-            val dropped = maxOf(droppedEvents, counters?.droppedBufferCount ?: 0)
+            val c = player.videoDecoderCounters
+            c?.ensureUpdated()
+            val rTot = c?.renderedOutputBufferCount ?: 0
+            val dTot = c?.droppedBufferCount ?: 0
+
+            val rendered: Int
+            val dropped: Int
+            val measured: Long
+            if (warm && played - playedAtWarm >= 1000) {
+                rendered = rTot - r0
+                dropped = dTot - d0
+                measured = played - playedAtWarm
+            } else {
+                rendered = rTot
+                dropped = dTot
+                measured = played
+            }
+            val sec = measured / 1000.0
+            val fps = if (sec > 0) rendered / sec else 0.0
+            val fmtFps = player.videoFormat?.frameRate ?: Format.NO_VALUE.toFloat()
+            val contentFps = when {
+                fmtFps > 0 -> fmtFps.toDouble()
+                sec > 0 -> (rendered + dropped) / sec
+                else -> 0.0
+            }
 
             return Outcome(
                 firstFrame = firstFrame,
                 playedMs = played,
                 rendered = rendered,
                 dropped = dropped,
+                measuredMs = measured,
+                fps = fps,
+                contentFps = contentFps,
                 rebuffers = rebuffers,
                 decoderName = decoder,
                 errorCode = error?.errorCode,

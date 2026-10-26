@@ -1,5 +1,7 @@
 package fr.paradoxxx.tester4k
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.os.Build
@@ -13,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -20,27 +23,32 @@ import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Locale
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var home: View
     private lateinit var run: View
     private lateinit var results: View
+    private lateinit var logPanel: View
     private lateinit var runTitle: TextView
     private lateinit var runStatus: TextView
     private lateinit var runProgress: ProgressBar
     private lateinit var resultsHeader: TextView
     private lateinit var resultsList: LinearLayout
     private lateinit var resultsScroll: ScrollView
+    private lateinit var logText: TextView
+    private lateinit var logPath: TextView
     private lateinit var btnStart: Button
     private lateinit var btnDetails: Button
+    private lateinit var btnLog: Button
     private lateinit var tester: PlaybackTester
 
     private var job: Job? = null
     private var showDetails = false
     private var lastResults: List<TestResult> = emptyList()
     private var lastSummary: List<SummaryLine> = emptyList()
+    private var lastLog: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,14 +58,18 @@ class MainActivity : AppCompatActivity() {
         home = findViewById(R.id.home)
         run = findViewById(R.id.run)
         results = findViewById(R.id.results)
+        logPanel = findViewById(R.id.logPanel)
         runTitle = findViewById(R.id.runTitle)
         runStatus = findViewById(R.id.runStatus)
         runProgress = findViewById(R.id.runProgress)
         resultsHeader = findViewById(R.id.resultsHeader)
         resultsList = findViewById(R.id.resultsList)
         resultsScroll = findViewById(R.id.resultsScroll)
+        logText = findViewById(R.id.logText)
+        logPath = findViewById(R.id.logPath)
         btnStart = findViewById(R.id.btnStart)
         btnDetails = findViewById(R.id.btnDetails)
+        btnLog = findViewById(R.id.btnLog)
         tester = PlaybackTester(this, findViewById<PlayerView>(R.id.playerView))
 
         findViewById<TextView>(R.id.deviceInfo).text = deviceLine()
@@ -67,6 +79,12 @@ class MainActivity : AppCompatActivity() {
         btnDetails.setOnClickListener {
             showDetails = !showDetails
             renderResults()
+        }
+        btnLog.setOnClickListener { openLog() }
+        findViewById<Button>(R.id.btnCopy).setOnClickListener { copyLog() }
+        findViewById<Button>(R.id.btnLogBack).setOnClickListener {
+            show(results)
+            btnLog.requestFocus()
         }
         show(home)
         btnStart.requestFocus()
@@ -86,7 +104,7 @@ class MainActivity : AppCompatActivity() {
             runStatus.text = "Téléchargement d'un échantillon pendant quelques secondes"
             val conn = NetworkProbe.connection(this@MainActivity)
             val net = NetworkProbe.measure()
-            runStatus.text = if (net.ok) "Débit mesuré : ${fmt(net.mbps)} Mb/s" else "Connexion : ${net.error}"
+            runStatus.text = if (net.ok) "Débit mesuré : ${Verdict.fmt(net.mbps)} Mb/s" else "Connexion : ${net.error}"
             runProgress.progress = 1
             delay(1200)
 
@@ -95,7 +113,10 @@ class MainActivity : AppCompatActivity() {
                 runTitle.text = "Test ${i + 1}/${tests.size} — ${t.label}"
                 runStatus.text = "Vérification du décodeur…"
                 val probe = CodecProbe.probe(t)
-                val skip = (!probe.anyDecoder && !t.dolbyVision) || (probe.anyDecoder && !probe.sizeSupported)
+                // On ne saute que l'absence totale de décodeur, ou une 8K que le décodeur refuse.
+                // Sinon on tente la lecture : les déclarations des firmwares sont souvent fausses.
+                val skip = (!probe.anyDecoder && !t.dolbyVision) ||
+                        (probe.anyDecoder && !probe.sizeSupported && t.width > 3840)
 
                 val outcome = if (skip) {
                     runStatus.text = "Format non pris en charge par ce boîtier — test ignoré"
@@ -113,6 +134,8 @@ class MainActivity : AppCompatActivity() {
 
             lastResults = out
             lastSummary = Verdict.summary(out, net, conn, displayHdr10())
+            lastLog = LogBuilder.build(this@MainActivity, out, lastSummary, net, conn)
+            saveLog(lastLog)
             showDetails = false
             renderResults()
             show(results)
@@ -131,7 +154,7 @@ class MainActivity : AppCompatActivity() {
             resultsList.addView(row("${l.icon}  ${l.title}", l.text, 22f, 17f))
         }
         if (showDetails) {
-            resultsList.addView(sectionTitle("Détail des 13 tests"))
+            resultsList.addView(sectionTitle("Détail des ${lastResults.size} tests"))
             for (r in lastResults) {
                 resultsList.addView(row("${r.status.icon}  ${r.test.label} — ${r.status.label}", r.detail, 17f, 14f))
             }
@@ -170,10 +193,38 @@ class MainActivity : AppCompatActivity() {
         setPadding(0, dp(16), 0, dp(8))
     }
 
+    // ---------------- Rapport ----------------
+
+    private fun logFile(): File? = getExternalFilesDir(null)?.let { File(it, "paradoxxx-4k-log.txt") }
+
+    private fun saveLog(text: String) {
+        try { logFile()?.writeText(text) } catch (_: Exception) { }
+    }
+
+    private fun openLog() {
+        logText.text = lastLog
+        val f = logFile()
+        logPath.text = if (f != null && f.exists())
+            "Aussi enregistré dans : ${f.absolutePath}" else "Rapport non enregistré sur le stockage"
+        show(logPanel)
+        findViewById<ScrollView>(R.id.logScroll).scrollTo(0, 0)
+        findViewById<Button>(R.id.btnCopy).requestFocus()
+    }
+
+    private fun copyLog() {
+        try {
+            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("ParadoxXx 4K Tester", lastLog))
+            Toast.makeText(this, "Rapport copié dans le presse-papiers", Toast.LENGTH_LONG).show()
+        } catch (_: Exception) {
+            Toast.makeText(this, "Copie impossible", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // ---------------- Divers ----------------
 
     private fun show(v: View) {
-        for (x in listOf(home, run, results)) x.visibility = if (x == v) View.VISIBLE else View.GONE
+        for (x in listOf(home, run, results, logPanel)) x.visibility = if (x == v) View.VISIBLE else View.GONE
     }
 
     private fun deviceLine(): String =
@@ -195,19 +246,21 @@ class MainActivity : AppCompatActivity() {
         } catch (_: Exception) { null }
     }
 
-    private fun fmt(v: Double) = String.format(Locale.FRANCE, "%.0f", v)
-
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (run.visibility == View.VISIBLE || results.visibility == View.VISIBLE) {
-            job?.cancel()
-            show(home)
-            btnStart.requestFocus()
-        } else {
-            @Suppress("DEPRECATION")
-            super.onBackPressed()
+        when {
+            logPanel.visibility == View.VISIBLE -> { show(results); btnLog.requestFocus() }
+            run.visibility == View.VISIBLE || results.visibility == View.VISIBLE -> {
+                job?.cancel()
+                show(home)
+                btnStart.requestFocus()
+            }
+            else -> {
+                @Suppress("DEPRECATION")
+                super.onBackPressed()
+            }
         }
     }
 

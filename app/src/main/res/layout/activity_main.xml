@@ -191,6 +191,19 @@
                 android:textSize="18sp" />
 
             <Button
+                android:id="@+id/btnLog"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:background="@drawable/btn_bg"
+                android:paddingLeft="28dp"
+                android:paddingRight="28dp"
+                android:text="Rapport (log)"
+                android:textAllCaps="false"
+                android:textColor="@color/text"
+                android:textSize="18sp" />
+
+            <Button
                 android:id="@+id/btnRestart"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -199,6 +212,88 @@
                 android:paddingLeft="28dp"
                 android:paddingRight="28dp"
                 android:text="Refaire le test"
+                android:textAllCaps="false"
+                android:textColor="@color/text"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </LinearLayout>
+    <!-- ===== Rapport texte ===== -->
+    <LinearLayout
+        android:id="@+id/logPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bg"
+        android:orientation="vertical"
+        android:paddingLeft="40dp"
+        android:paddingTop="24dp"
+        android:paddingRight="40dp"
+        android:paddingBottom="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rapport technique"
+            android:textColor="@color/text"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/logPath"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/muted"
+            android:textSize="13sp" />
+
+        <ScrollView
+            android:id="@+id/logScroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1"
+            android:background="@color/surface"
+            android:focusable="true"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/logText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:textColor="@color/text"
+                android:textIsSelectable="true"
+                android:textSize="13sp" />
+        </ScrollView>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnCopy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/btn_bg"
+                android:paddingLeft="28dp"
+                android:paddingRight="28dp"
+                android:text="Copier le rapport"
+                android:textAllCaps="false"
+                android:textColor="@color/text"
+                android:textSize="18sp" />
+
+            <Button
+                android:id="@+id/btnLogBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:background="@drawable/btn_bg"
+                android:paddingLeft="28dp"
+                android:paddingRight="28dp"
+                android:text="Retour"
                 android:textAllCaps="false"
                 android:textColor="@color/text"
                 android:textSize="18sp" />
