@@ -21,8 +21,12 @@ Une saccade avec un débit insuffisant = connexion trop lente (📶).
    ou manuellement via *Run workflow*).
 3. À la fin, télécharge l'artefact **ParadoxXx-4K-Tester** (zip contenant l'APK).
 
-L'APK est signé avec une clé debug générée à chaque compilation :
-pour mettre à jour l'appli, désinstalle l'ancienne version d'abord.
+## Signature
+Si les secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` et `KEY_PASSWORD`
+sont définis (Settings › Secrets and variables › Actions), l'APK est signé avec cette
+clé fixe : les mises à jour s'installent par-dessus. Sinon, clé debug temporaire
+(désinstaller avant chaque mise à jour).
+Garder une copie du fichier .jks : sans lui, plus de mise à jour possible.
 
 ## Crédits
 Vidéos de test : Jellyfin / Gnattu — licence Creative Commons BY-SA.
