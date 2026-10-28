@@ -42,7 +42,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnStart: Button
     private lateinit var btnDetails: Button
     private lateinit var btnLog: Button
+    private lateinit var btnResume: Button
+    private lateinit var resumeNote: TextView
     private lateinit var tester: PlaybackTester
+    private lateinit var state: RunState
+    private var pendingResume: RunState.Snapshot? = null
 
     private var job: Job? = null
     private var showDetails = false
@@ -74,8 +78,13 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.deviceInfo).text = deviceLine()
 
-        btnStart.setOnClickListener { startTests() }
-        findViewById<Button>(R.id.btnRestart).setOnClickListener { startTests() }
+        btnResume = findViewById(R.id.btnResume)
+        resumeNote = findViewById(R.id.resumeNote)
+        state = RunState(this)
+
+        btnStart.setOnClickListener { startTests(null) }
+        btnResume.setOnClickListener { pendingResume?.let { startTests(it) } }
+        findViewById<Button>(R.id.btnRestart).setOnClickListener { startTests(null) }
         btnDetails.setOnClickListener {
             showDetails = !showDetails
             renderResults()
@@ -87,29 +96,64 @@ class MainActivity : AppCompatActivity() {
             btnLog.requestFocus()
         }
         show(home)
-        btnStart.requestFocus()
+        checkCrash()
+    }
+
+    /** Le lancement précédent a-t-il été tué par le système en plein test ? */
+    private fun checkCrash() {
+        val snap = state.crashed()
+        pendingResume = snap
+        if (snap == null) {
+            resumeNote.visibility = View.GONE
+            btnResume.visibility = View.GONE
+            btnStart.requestFocus()
+            return
+        }
+        val idx = TestCatalog.tests.indexOf(snap.crashedTest) + 1
+        resumeNote.text = "⚠️ Le test précédent s'est arrêté brutalement au test $idx/${TestCatalog.tests.size} " +
+                "(${snap.crashedTest.label}) : le boîtier a manqué de mémoire et Android a fermé l'appli.\n" +
+                "Vous pouvez reprendre à partir du test suivant."
+        resumeNote.visibility = View.VISIBLE
+        btnResume.visibility = View.VISIBLE
+        btnResume.requestFocus()
     }
 
     // ---------------- Déroulement ----------------
 
-    private fun startTests() {
+    private fun startTests(resume: RunState.Snapshot?) {
         job?.cancel()
+        pendingResume = null
         show(run)
         val tests = TestCatalog.tests
         runProgress.max = tests.size + 1
         runProgress.progress = 0
 
         job = lifecycleScope.launch {
-            runTitle.text = "Mesure de la connexion…"
-            runStatus.text = "Téléchargement d'un échantillon pendant quelques secondes"
             val conn = NetworkProbe.connection(this@MainActivity)
-            val net = NetworkProbe.measure()
-            runStatus.text = if (net.ok) "Débit mesuré : ${Verdict.fmt(net.mbps)} Mb/s" else "Connexion : ${net.error}"
-            runProgress.progress = 1
-            delay(1200)
-
             val out = mutableListOf<TestResult>()
-            tests.forEachIndexed { i, t ->
+            val net: NetworkProbe.Result
+            val startIndex: Int
+
+            if (resume == null) {
+                runTitle.text = "Mesure de la connexion…"
+                runStatus.text = "Téléchargement d'un échantillon pendant quelques secondes"
+                net = NetworkProbe.measure()
+                runStatus.text = if (net.ok) "Débit mesuré : ${Verdict.fmt(net.mbps)} Mb/s" else "Connexion : ${net.error}"
+                state.begin(net)
+                startIndex = 0
+                delay(1200)
+            } else {
+                net = resume.net
+                out += resume.done
+                out += Verdict.memoryKill(resume.crashedTest)
+                state.begin(net)
+                state.saveDone(out)
+                startIndex = tests.indexOf(resume.crashedTest) + 1
+            }
+            runProgress.progress = startIndex + 1
+
+            for (i in startIndex until tests.size) {
+                val t = tests[i]
                 runTitle.text = "Test ${i + 1}/${tests.size} — ${t.label}"
                 runStatus.text = "Vérification du décodeur…"
                 val probe = CodecProbe.probe(t)
@@ -124,17 +168,20 @@ class MainActivity : AppCompatActivity() {
                     null
                 } else {
                     runStatus.text = "Chargement de la vidéo…"
+                    state.markRunning(t)
                     tester.run(t.url) { played ->
                         if (played > 0) runStatus.text = "Lecture : ${played / 1000} / 10 s"
                     }
                 }
                 out += Verdict.evaluate(t, probe, outcome, if (net.ok) net.mbps else 0.0)
+                state.saveDone(out)
                 runProgress.progress = i + 2
             }
 
+            state.clear()
             lastResults = out
             val hdmi = HdmiInfo.read()
-            lastSummary = Verdict.summary(out, net, conn, displayHdr10(), hdmi)
+            lastSummary = Verdict.summary(out, net, conn, displayHdr10(), hdmi, LogBuilder.ramMb(this@MainActivity))
             lastLog = LogBuilder.build(this@MainActivity, out, lastSummary, net, conn)
             saveLog(lastLog)
             showDetails = false
@@ -142,6 +189,14 @@ class MainActivity : AppCompatActivity() {
             show(results)
             btnDetails.requestFocus()
         }
+    }
+
+    /** Arrêt volontaire (retour, sortie de l'appli) : ce n'est pas un plantage. */
+    private fun cancelRun() {
+        job?.cancel()
+        state.clear()
+        resumeNote.visibility = View.GONE
+        btnResume.visibility = View.GONE
     }
 
     // ---------------- Résultats ----------------
@@ -254,7 +309,7 @@ class MainActivity : AppCompatActivity() {
         when {
             logPanel.visibility == View.VISIBLE -> { show(results); btnLog.requestFocus() }
             run.visibility == View.VISIBLE || results.visibility == View.VISIBLE -> {
-                job?.cancel()
+                cancelRun()
                 show(home)
                 btnStart.requestFocus()
             }
@@ -269,7 +324,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         // Quitter l'appli pendant un test l'interrompt proprement
         if (run.visibility == View.VISIBLE) {
-            job?.cancel()
+            cancelRun()
             show(home)
         }
     }

@@ -1,6 +1,7 @@
 package fr.paradoxxx.tester4k
 
 import androidx.media3.common.PlaybackException
+import org.json.JSONObject
 import java.util.Locale
 
 enum class Status(val icon: String, val label: String, val rank: Int) {
@@ -10,6 +11,7 @@ enum class Status(val icon: String, val label: String, val rank: Int) {
     NETWORK("📶", "Connexion trop lente", 4),
     STUTTER("❌", "Trop saccadé", 3),
     UNSUPPORTED("❌", "Format non pris en charge", 2),
+    MEMORY("❌", "Mémoire insuffisante (appli fermée par le système)", 2),
     UNAVAILABLE("❔", "Vidéo de test indisponible", 1)
 }
 
@@ -17,9 +19,19 @@ data class TestResult(
     val test: VideoTest,
     val status: Status,
     val detail: String,
-    val probe: CodecProbe.Result,
-    val outcome: PlaybackTester.Outcome?
-)
+    val logLines: String          // détail brut pour le rapport
+) {
+    fun toJson(): JSONObject = JSONObject()
+        .put("id", test.id).put("status", status.name).put("detail", detail).put("log", logLines)
+
+    companion object {
+        fun fromJson(o: JSONObject): TestResult? {
+            val t = TestCatalog.tests.firstOrNull { it.id == o.optString("id") } ?: return null
+            val st = try { Status.valueOf(o.optString("status")) } catch (_: Exception) { return null }
+            return TestResult(t, st, o.optString("detail"), o.optString("log"))
+        }
+    }
+}
 
 data class SummaryLine(val icon: String, val title: String, val text: String)
 
@@ -36,7 +48,7 @@ object Verdict {
         if (o == null) {
             val why = if (!probe.anyDecoder) "Aucun décodeur pour ce format sur ce boîtier"
             else "Le décodeur annonce ne pas gérer ${t.width}×${t.height}"
-            return TestResult(t, Status.UNSUPPORTED, why, probe, null)
+            return TestResult(t, Status.UNSUPPORTED, why, testLog(probe, null))
         }
 
         val netTooSlow = netMbps > 0 && netMbps < t.bitrateMbps * 1.15
@@ -84,7 +96,28 @@ object Verdict {
                 finalDetail = "Pas de décodeur Dolby Vision · lu en HEVC/HDR10 à la place · $detail"
             }
         }
-        return TestResult(t, status, finalDetail, probe, o)
+        return TestResult(t, status, finalDetail, testLog(probe, o))
+    }
+
+    /** Test pendant lequel Android a tué l'appli (mémoire saturée). */
+    fun memoryKill(t: VideoTest) = TestResult(t, Status.MEMORY,
+        "Le système a fermé l'appli pendant ce test : la mémoire (RAM) du boîtier était saturée",
+        "   Lecture : appli tuée par le système pendant le test (lowmemorykiller probable)")
+
+    private fun testLog(p: CodecProbe.Result, o: PlaybackTester.Outcome?): String = buildString {
+        append("   Sonde   : décodeur=${p.decoderName ?: "-"} présent=${p.anyDecoder} résolution=${p.sizeSupported}" +
+                " matériel=${p.hardware} profil10bits=${p.profileDeclared}")
+        if (o == null) {
+            append("\n   Lecture : non lancée")
+        } else {
+            append("\n   Lecture : 1re image=${o.firstFrame} lu=${o.playedMs} ms mesuré=${o.measuredMs} ms" +
+                    " i/s=${"%.1f".format(Locale.US, o.fps)}/${"%.1f".format(Locale.US, o.contentFps)}" +
+                    " affichées=${o.rendered} perdues=${o.dropped} coupures=${o.rebuffers}")
+            append("\n   Décodeur: ${o.decoderName ?: "-"}" +
+                    (o.errorName?.let { " · erreur=$it (${o.errorCode})" } ?: "") +
+                    (if (o.videoUnsupported) " · piste vidéo non supportée" else "") +
+                    (if (o.timedOut) " · délai dépassé" else ""))
+        }
     }
 
     // ---------- Résumé grand public ----------
@@ -94,7 +127,8 @@ object Verdict {
         net: NetworkProbe.Result,
         conn: NetworkProbe.Connection,
         hdrDisplay: Boolean?,
-        hdmi: HdmiInfo.Mode? = null
+        hdmi: HdmiInfo.Mode? = null,
+        ramMb: Long? = null
     ): List<SummaryLine> {
         val lines = mutableListOf<SummaryLine>()
 
@@ -104,6 +138,14 @@ object Verdict {
                 "Les vidéos en 50/60 images par seconde seront saccadées et les résultats 4K faussés. " +
                 "Réglez la résolution sur une valeur en 60 Hz (ex. 1920x1080p60) dans " +
                 "Paramètres › Affichage › HDMI, puis refaites le test.")
+        }
+
+        val killed = results.filter { it.status == Status.MEMORY }
+        if (killed.isNotEmpty()) {
+            val ram = ramMb?.let { " (${it} Mo de RAM)" } ?: ""
+            lines += SummaryLine("⚠️", "Mémoire insuffisante$ram",
+                "Le boîtier a fermé l'appli pendant : " + killed.joinToString(", ") { it.test.label } +
+                ". Ces formats risquent aussi de faire planter les autres lecteurs.")
         }
 
         lines += groupLine(results, Group.FHD, "Full HD (1080p)")
@@ -142,6 +184,7 @@ object Verdict {
             Status.FALLBACK -> "Non, mais la vidéo est lue en HDR10 à la place"
             Status.NETWORK -> "Impossible à vérifier : la connexion est trop lente pour ce format"
             Status.STUTTER -> "Non : le boîtier n'est pas assez puissant (image saccadée)"
+            Status.MEMORY -> "Non : le boîtier manque de mémoire (l'appli a été fermée)"
             Status.UNSUPPORTED -> if (g == Group.DOLBY) "Non : pas de Dolby Vision sur ce boîtier"
                 else "Non : format non pris en charge par ce boîtier"
             Status.UNAVAILABLE -> "Test impossible (vidéo de test indisponible)"

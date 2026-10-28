@@ -11,8 +11,8 @@ android {
         applicationId = "fr.paradoxxx.tester4k"
         minSdk = 21
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.4"
+        versionCode = 6
+        versionName = "1.5"
         // Seulement FR/EN : évite d'embarquer les ~90 langues d'AppCompat
         resourceConfigurations += listOf("fr", "en")
     }

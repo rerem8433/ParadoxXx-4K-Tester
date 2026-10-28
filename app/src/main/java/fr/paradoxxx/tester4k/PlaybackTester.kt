@@ -10,6 +10,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
@@ -49,7 +50,14 @@ class PlaybackTester(private val ctx: Context, private val view: PlayerView) {
         onTick: (playedMs: Long) -> Unit = {}
     ): Outcome {
         val renderers = DefaultRenderersFactory(ctx).setEnableDecoderFallback(true)
-        val player = ExoPlayer.Builder(ctx, renderers).build()
+        // Tampon réduit : on ne lit que 10 s, inutile de garder jusqu'à ~130 Mo en mémoire
+        // (important sur les boîtiers à 1 Go de RAM)
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(4_000, 12_000, 1_000, 2_000)
+            .setTargetBufferBytes(24 * 1024 * 1024)
+            .setPrioritizeTimeOverSizeThresholds(false)
+            .build()
+        val player = ExoPlayer.Builder(ctx, renderers).setLoadControl(loadControl).build()
         view.player = player
         player.volume = 0f
 

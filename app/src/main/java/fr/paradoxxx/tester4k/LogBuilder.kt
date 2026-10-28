@@ -55,21 +55,7 @@ object LogBuilder {
         results.forEachIndexed { i, r ->
             appendLine("${i + 1}. ${r.status.icon} ${r.test.label} [${r.test.mime}, ${r.test.width}x${r.test.height}, ${r.test.bitrateMbps} Mb/s]")
             appendLine("   Verdict : ${r.status.label}")
-            val p = r.probe
-            appendLine("   Sonde   : décodeur=${p.decoderName ?: "-"} présent=${p.anyDecoder} résolution=${p.sizeSupported}" +
-                    " matériel=${p.hardware} profil10bits=${p.profileDeclared}")
-            val o = r.outcome
-            if (o == null) {
-                appendLine("   Lecture : non lancée")
-            } else {
-                appendLine("   Lecture : 1re image=${o.firstFrame} lu=${o.playedMs} ms mesuré=${o.measuredMs} ms" +
-                        " i/s=${"%.1f".format(Locale.US, o.fps)}/${"%.1f".format(Locale.US, o.contentFps)}" +
-                        " affichées=${o.rendered} perdues=${o.dropped} coupures=${o.rebuffers}")
-                appendLine("   Décodeur: ${o.decoderName ?: "-"}" +
-                        (o.errorName?.let { " · erreur=$it (${o.errorCode})" } ?: "") +
-                        (if (o.videoUnsupported) " · piste vidéo non supportée" else "") +
-                        (if (o.timedOut) " · délai dépassé" else ""))
-            }
+            appendLine(r.logLines)
         }
         appendLine()
 
@@ -77,7 +63,7 @@ object LogBuilder {
         decoders().forEach { appendLine(it) }
     }
 
-    private fun ramMb(ctx: Context): Long = try {
+    fun ramMb(ctx: Context): Long = try {
         val am = ctx.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val mi = ActivityManager.MemoryInfo()
         am.getMemoryInfo(mi)
