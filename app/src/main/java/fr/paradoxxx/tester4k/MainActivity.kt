@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
             btnStart.requestFocus()
             return
         }
-        val idx = TestCatalog.tests.indexOf(snap.crashedTest) + 1
+        val idx = TestCatalog.tests.sortedBy { if (it.is4kOrMore) 1 else 0 }.indexOf(snap.crashedTest) + 1
         resumeNote.text = "⚠️ Le test précédent s'est arrêté brutalement au test $idx/${TestCatalog.tests.size} " +
                 "(${snap.crashedTest.label}) : le boîtier a manqué de mémoire et Android a fermé l'appli.\n" +
                 "Vous pouvez reprendre à partir du test suivant."
@@ -124,7 +124,8 @@ class MainActivity : AppCompatActivity() {
         job?.cancel()
         pendingResume = null
         show(run)
-        val tests = TestCatalog.tests
+        // Tests ≤ 1080p d'abord : sur une box à 1 Go, leurs résultats sont acquis avant la 4K
+        val tests = TestCatalog.tests.sortedBy { if (it.is4kOrMore) 1 else 0 }
         runProgress.max = tests.size + 1
         runProgress.progress = 0
 
@@ -156,6 +157,13 @@ class MainActivity : AppCompatActivity() {
                 val t = tests[i]
                 runTitle.text = "Test ${i + 1}/${tests.size} — ${t.label}"
                 runStatus.text = "Vérification du décodeur…"
+                // Après un plantage mémoire en 4K, les autres tests 4K/8K planteraient aussi
+                if (t.is4kOrMore && out.any { it.status == Status.MEMORY && it.test.is4kOrMore }) {
+                    out += Verdict.memorySkip(t)
+                    state.saveDone(out)
+                    runProgress.progress = i + 2
+                    continue
+                }
                 val probe = CodecProbe.probe(t)
                 // On ne saute que l'absence totale de décodeur, ou une 8K que le décodeur refuse.
                 // Sinon on tente la lecture : les déclarations des firmwares sont souvent fausses.
@@ -179,10 +187,10 @@ class MainActivity : AppCompatActivity() {
             }
 
             state.clear()
-            lastResults = out
+            lastResults = out.sortedBy { TestCatalog.tests.indexOf(it.test) }
             val hdmi = HdmiInfo.read()
-            lastSummary = Verdict.summary(out, net, conn, displayHdr10(), hdmi, LogBuilder.ramMb(this@MainActivity))
-            lastLog = LogBuilder.build(this@MainActivity, out, lastSummary, net, conn)
+            lastSummary = Verdict.summary(lastResults, net, conn, displayHdr10(), hdmi, LogBuilder.ramMb(this@MainActivity))
+            lastLog = LogBuilder.build(this@MainActivity, lastResults, lastSummary, net, conn)
             saveLog(lastLog)
             showDetails = false
             renderResults()

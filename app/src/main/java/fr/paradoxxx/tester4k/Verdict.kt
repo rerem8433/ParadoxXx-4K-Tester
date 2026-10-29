@@ -104,6 +104,11 @@ object Verdict {
         "Le système a fermé l'appli pendant ce test : la mémoire (RAM) du boîtier était saturée",
         "   Lecture : appli tuée par le système pendant le test (lowmemorykiller probable)")
 
+    /** Test 4K non lancé : un test 4K précédent a déjà saturé la mémoire. */
+    fun memorySkip(t: VideoTest) = TestResult(t, Status.MEMORY,
+        "Non lancé : un test 4K précédent a déjà saturé la mémoire du boîtier",
+        "   Lecture : non lancée (mémoire saturée lors d'un test 4K précédent)")
+
     private fun testLog(p: CodecProbe.Result, o: PlaybackTester.Outcome?): String = buildString {
         append("   Sonde   : décodeur=${p.decoderName ?: "-"} présent=${p.anyDecoder} résolution=${p.sizeSupported}" +
                 " matériel=${p.hardware} profil10bits=${p.profileDeclared}")
@@ -144,8 +149,9 @@ object Verdict {
         if (killed.isNotEmpty()) {
             val ram = ramMb?.let { " (${it} Mo de RAM)" } ?: ""
             lines += SummaryLine("⚠️", "Mémoire insuffisante$ram",
-                "Le boîtier a fermé l'appli pendant : " + killed.joinToString(", ") { it.test.label } +
-                ". Ces formats risquent aussi de faire planter les autres lecteurs.")
+                "La 4K sature la mémoire de ce boîtier : Android a fermé l'appli en pleine lecture. " +
+                "Formats concernés : " + killed.joinToString(", ") { it.test.label } +
+                ". Ils risquent aussi de faire planter les autres lecteurs.")
         }
 
         lines += groupLine(results, Group.FHD, "Full HD (1080p)")
