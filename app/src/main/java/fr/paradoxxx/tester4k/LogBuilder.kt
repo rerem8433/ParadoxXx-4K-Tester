@@ -35,8 +35,8 @@ object LogBuilder {
                 if (Build.VERSION.SDK_INT >= 31) " · SoC ${Build.SOC_MANUFACTURER} ${Build.SOC_MODEL}" else "")
         appendLine("CPU ABI   : ${Build.SUPPORTED_ABIS.joinToString()} · ${Runtime.getRuntime().availableProcessors()} cœurs")
         appendLine("RAM       : ${ramMb(ctx)} Mo")
-        appendLine("Écran     : ${display(ctx)}")
-        appendLine("HDMI      : " + (HdmiInfo.read()?.raw ?: "mode non lisible"))
+        appendLine("Interface : ${display(ctx)} (résolution de l'interface Android, pas forcément celle envoyée à la TV)")
+        appendLine("HDMI      : " + (HdmiInfo.read()?.let { "${HdmiInfo.label(it)} (sortie réelle vers la TV)" } ?: "mode non lisible"))
         appendLine("Firmware  : ${Build.DISPLAY}")
         appendLine()
 

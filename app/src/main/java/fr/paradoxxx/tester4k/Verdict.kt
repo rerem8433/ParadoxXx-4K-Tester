@@ -202,6 +202,10 @@ object Verdict {
                 rs.none { it.test.is4kOrMore && it.status.rank >= Status.MINOR.rank } -> " (seulement en Full HD)"
             else -> ""
         }
+        // Un échec mêlé à un plantage mémoire : la vraie cause est la mémoire
+        if (best.status.rank < Status.MINOR.rank && rs.any { it.status == Status.MEMORY }) {
+            return SummaryLine(Status.MEMORY.icon, title, "Non : le boîtier manque de mémoire pour ce format")
+        }
         return SummaryLine(best.status.icon, title, text + extra)
     }
 

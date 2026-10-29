@@ -157,18 +157,20 @@ class MainActivity : AppCompatActivity() {
                 val t = tests[i]
                 runTitle.text = "Test ${i + 1}/${tests.size} — ${t.label}"
                 runStatus.text = "Vérification du décodeur…"
-                // Après un plantage mémoire en 4K, les autres tests 4K/8K planteraient aussi
-                if (t.is4kOrMore && out.any { it.status == Status.MEMORY && it.test.is4kOrMore }) {
-                    out += Verdict.memorySkip(t)
-                    state.saveDone(out)
-                    runProgress.progress = i + 2
-                    continue
-                }
                 val probe = CodecProbe.probe(t)
                 // On ne saute que l'absence totale de décodeur, ou une 8K que le décodeur refuse.
                 // Sinon on tente la lecture : les déclarations des firmwares sont souvent fausses.
                 val skip = (!probe.anyDecoder && !t.dolbyVision) ||
                         (probe.anyDecoder && !probe.sizeSupported && t.width > 3840)
+
+                // Après un plantage mémoire en 4K, les autres tests 4K/8K jouables planteraient aussi.
+                // (Un format sans décodeur reste « non pris en charge ».)
+                if (!skip && t.is4kOrMore && out.any { it.status == Status.MEMORY && it.test.is4kOrMore }) {
+                    out += Verdict.memorySkip(t)
+                    state.saveDone(out)
+                    runProgress.progress = i + 2
+                    continue
+                }
 
                 val outcome = if (skip) {
                     runStatus.text = "Format non pris en charge par ce boîtier — test ignoré"

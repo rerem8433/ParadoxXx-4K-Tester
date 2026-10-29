@@ -15,7 +15,8 @@ object HdmiInfo {
         "/sys/class/drm/card0-HDMI-A-1/mode",
         "/sys/class/drm/card1-HDMI-A-1/mode",
         "/sys/class/display/HDMI/mode",
-        "/sys/class/display/mode"            // Amlogic : ex. « 2160p30hz »
+        "/sys/class/display/mode",           // Amlogic : ex. « 2160p30hz »
+        "/sys/class/disp/disp/attr/sys"      // Allwinner : « … fps:60.0 3840x 2160 … »
     )
 
     fun read(): Mode? {
@@ -28,6 +29,14 @@ object HdmiInfo {
     }
 
     private fun parse(raw: String): Mode? {
+        // Allwinner (texte multi-lignes) : « hdmi output mode(10) fps:30.0 3840x 2160 »
+        if (raw.contains("fps")) {
+            val line = raw.lines().firstOrNull { it.contains("hdmi", true) && it.contains("fps") }
+                ?: raw.lines().firstOrNull { it.contains("fps") } ?: raw
+            val size = Regex("""(\d{3,4})\s*x\s*(\d{3,4})""").find(line)
+            val fps = Regex("""fps:?\s*(\d{2,3})""").find(line)?.groupValues?.get(1)?.toIntOrNull()
+            if (size != null) return Mode(line.trim(), size.groupValues[1].toInt(), size.groupValues[2].toInt(), fps)
+        }
         // « 3840x2160p30 », « 1920x1080p60.00 », « 1920x1080i50 »
         Regex("""(\d{3,4})x(\d{3,4})[pi]?(\d{2,3})?""").find(raw)?.let { m ->
             return Mode(raw, m.groupValues[1].toInt(), m.groupValues[2].toInt(), m.groupValues[3].toIntOrNull())
