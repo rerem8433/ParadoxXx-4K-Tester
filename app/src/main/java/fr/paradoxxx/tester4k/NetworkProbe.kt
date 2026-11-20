@@ -15,12 +15,22 @@ import java.net.URL
 
 object NetworkProbe {
 
+    enum class Kind { ETHERNET, WIFI, UNKNOWN }
+
     data class Connection(
-        val type: String,        // « Câble Ethernet », « Wi-Fi », « Inconnue »
+        val kind: Kind,
         val isWifi: Boolean,
-        val wifiBand: String?,   // « 2,4 GHz », « 5 GHz »…
+        val wifiBand: String?,   // « 2,4 », « 5 », « 6 » (GHz)
         val ethernetSpeed: Int?  // Mb/s négociés sur le port, si lisible
-    )
+    ) {
+        /** Texte traduit : « Câble Ethernet », « Wi-Fi 5 GHz »… */
+        val type: String get() = when (kind) {
+            Kind.ETHERNET -> L.s(R.string.c_eth)
+            Kind.WIFI -> L.s(R.string.c_wifi)
+            Kind.UNKNOWN -> L.s(R.string.c_unknown)
+        }
+        val bandLabel: String? get() = wifiBand?.let { L.s(R.string.band_ghz, it) }
+    }
 
     data class Result(val mbps: Double, val error: String?) {
         val ok get() = error == null && mbps > 0
@@ -49,9 +59,9 @@ object NetworkProbe {
                 val wm = ctx.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
                 val f = wm.connectionInfo?.frequency ?: 0
                 band = when {
-                    f in 2400..2500 -> "2,4 GHz"
-                    f in 4900..5900 -> "5 GHz"
-                    f > 5900 -> "6 GHz"
+                    f in 2400..2500 -> "2,4"
+                    f in 4900..5900 -> "5"
+                    f > 5900 -> "6"
                     else -> null
                 }
             } catch (_: Exception) { }
@@ -61,8 +71,8 @@ object NetworkProbe {
             File("/sys/class/net/eth0/speed").readText().trim().toIntOrNull()
         } catch (_: Exception) { null } else null
 
-        val type = when { eth -> "Câble Ethernet"; wifi -> "Wi-Fi"; else -> "Inconnue" }
-        return Connection(type, wifi, band, ethSpeed)
+        val kind = when { eth -> Kind.ETHERNET; wifi -> Kind.WIFI; else -> Kind.UNKNOWN }
+        return Connection(kind, wifi, band, ethSpeed)
     }
 
     /** Télécharge pendant ~7 s (max 80 Mo) et calcule le débit réel. */

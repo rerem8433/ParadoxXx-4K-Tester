@@ -5,7 +5,11 @@
 <h1 align="center">ParadoxXx 4K Tester</h1>
 
 <p align="center">
-  <b>🇫🇷 <a href="#-français">Français</a></b> · <b>🇬🇧 <a href="#-english">English</a></b>
+  <b>🇫🇷 <a href="#-français">Français</a></b> · <b>🇬🇧 <a href="#-english">English</a></b> · <b>🇷🇺 <a href="#-русский">Русский</a></b>
+</p>
+
+<p align="center">
+  <a href="CHANGELOG.md">📝 Changelog</a>
 </p>
 
 ---
@@ -49,6 +53,10 @@ Un avertissement s'affiche si la sortie HDMI est réglée en 24/25/30 Hz
 (ex. « Auto » en 4K 30 Hz) : dans ce cas, réglez une résolution en 60 Hz
 (ex. 1920x1080p60) et refaites le test.
 
+**Boîtiers à faible mémoire (1 Go) :** les tests Full HD passent en premier. Si la 4K sature
+la mémoire et qu'Android ferme l'appli, elle le détecte au lancement suivant et propose
+**« Reprendre au test suivant »** ; les autres tests 4K sont alors marqués « ❌ Mémoire insuffisante ».
+
 ### Rapport technique
 Le bouton **« Rapport (log) »** affiche un rapport complet, avec un bouton **« Copier »** :
 modèle, SoC, RAM, mode HDMI réel, firmware, débit, détail de chaque test
@@ -69,6 +77,9 @@ Avec scrcpy, le presse-papiers du boîtier est synchronisé avec le PC : « Copi
 **Compatibilité :** Android 5.0 et plus, toutes architectures (armv7, arm64, x86 :
 l'appli ne contient aucune bibliothèque native). Navigation à la télécommande.
 **Connexion Internet obligatoire.**
+
+**Langues :** français, anglais et russe, selon la langue du boîtier (interface et
+rapport technique). Les autres langues affichent l'anglais.
 
 ### Comment ça marche
 1. **Débit** : ~7 s de téléchargement depuis `repo.jellyfin.org`.
@@ -91,6 +102,9 @@ temporaire est utilisée (désinstaller avant chaque mise à jour).
 ### Crédits
 - Vidéos de test : **Jellyfin / Gnattu**, licence Creative Commons BY-SA.
 - Lecteur : **AndroidX Media3 (ExoPlayer)**.
+- Traduction russe : **Mr. SlimHouse** de la team **SlimboxTV** (portage d'Android TV pour boîtiers
+  Amlogic / Allwinner / Realtek) — Telegram : [@mrSlimHouse](https://t.me/mrSlimHouse) ·
+  site : [slimboxtv.ru](https://slimboxtv.ru) · groupe : [@slimbox_chat](https://t.me/slimbox_chat).
 - Développé par **ParadoxXx Squad**.
 
 ---
@@ -134,8 +148,12 @@ A warning is shown when the HDMI output runs at 24/25/30 Hz
 (e.g. "Auto" picking 4K 30 Hz): set a 60 Hz resolution
 (e.g. 1920x1080p60) and run the test again.
 
+**Low-memory boxes (1 GB):** Full HD tests run first. If 4K fills the memory and Android
+closes the app, the next launch detects it and offers **"Resume at next test"**; the remaining
+4K tests are then marked "❌ Not enough memory".
+
 ### Technical report
-The **"Rapport (log)"** button shows a full report with a **"Copy"** button:
+The **"Report (log)"** button shows a full report with a **"Copy"** button:
 model, SoC, RAM, real HDMI mode, firmware, speed, per-test details
 (hardware / software decoder, frames per second actually displayed, dropped frames, buffering)
 and the list of every video decoder on the box.
@@ -155,7 +173,8 @@ With scrcpy, the box clipboard is synced to the PC: "Copy" in the app, then Ctrl
 the app ships no native library). Remote-control friendly.
 **Internet connection required.**
 
-> The interface is currently in French only.
+**Languages:** English, French and Russian, following the box language (interface and
+technical report). Any other language falls back to English.
 
 ### How it works
 1. **Speed**: ~7 s download from `repo.jellyfin.org`.
@@ -178,4 +197,102 @@ is used (uninstall before each update).
 ### Credits
 - Test videos: **Jellyfin / Gnattu**, Creative Commons BY-SA license.
 - Player: **AndroidX Media3 (ExoPlayer)**.
+- Russian translation: **Mr. SlimHouse** from the **SlimboxTV** team (Android TV ports for
+  Amlogic / Allwinner / Realtek boxes) — Telegram: [@mrSlimHouse](https://t.me/mrSlimHouse) ·
+  website: [slimboxtv.ru](https://slimboxtv.ru) · group: [@slimbox_chat](https://t.me/slimbox_chat).
 - Made by **ParadoxXx Squad**.
+
+---
+
+## 🇷🇺 Русский
+
+### Что это?
+Приложение для Android TV, которое **простым языком** отвечает на вопрос:
+*«Что на самом деле может воспроизвести моя приставка и хватает ли скорости подключения?»*
+
+Примерно за 3 минуты оно проверяет Full HD, 4K, HDR10, Dolby Vision, 8K и AV1
+и показывает понятный каждому итог.
+
+### Что проверяется
+
+| Категория | Тесты |
+|---|---|
+| **Подключение** | Реальная скорость, тип (Ethernet / Wi-Fi 2,4 / 5 ГГц), скорость порта Ethernet |
+| **Full HD (1080p)** | H.264 · HEVC · HEVC 10 бит |
+| **4K** | H.264 · HEVC · HEVC 10 бит · HEVC 10 бит, высокий битрейт (80 Мбит/с) |
+| **HDR** | HDR10 Full HD · HDR10 4K · Dolby Vision 4K (профиль 8.1) |
+| **8K** | HEVC |
+| **AV1** | Full HD · 4K |
+
+### Как читать результаты
+
+| Значок | Значение |
+|---|---|
+| ✅ | Полностью плавное воспроизведение |
+| ⚠️ | Подходит для фильмов и сериалов (24–30 кадр/с), на пределе для спорта и видео 60 кадр/с |
+| ➖ | Dolby Vision нет, но видео воспроизводится в HDR10 |
+| 📶 | Слишком медленное подключение для этого формата (остановки при воспроизведении) |
+| ❌ | Формат не поддерживается или приставке не хватает производительности |
+| ❔ | Тестовое видео недоступно (сервер) |
+
+Приложение различает две причины рывков:
+**скорости достаточно + рывки = приставка слишком слабая**,
+**остановки + скорости недостаточно = слишком медленное подключение**.
+
+Если выход HDMI работает на 24/25/30 Гц (например, «Авто» выбрал 4K 30 Гц),
+появится предупреждение: выберите режим 60 Гц (например, 1920x1080p60) и повторите тест.
+
+**Приставки с малым объёмом памяти (1 ГБ):** сначала выполняются тесты Full HD. Если 4K
+исчерпает память и Android закроет приложение, при следующем запуске оно это обнаружит
+и предложит **«Продолжить со следующего теста»**; остальные тесты 4K будут отмечены
+«❌ Недостаточно памяти».
+
+### Технический отчёт
+Кнопка **«Отчёт»** показывает полный отчёт с кнопкой **«Скопировать отчёт»**:
+модель, SoC, ОЗУ, фактический режим HDMI, прошивка, скорость, подробности каждого теста
+(аппаратный / программный декодер, реально показанные кадры в секунду, пропущенные кадры, остановки)
+и список всех видеодекодеров приставки.
+
+Он также сохраняется здесь:
+```
+adb pull /sdcard/Android/data/fr.paradoxxx.tester4k/files/paradoxxx-4k-log.txt
+```
+С scrcpy буфер обмена приставки синхронизируется с ПК: «Скопировать» в приложении, затем Ctrl+V на ПК.
+
+### Установка
+1. Скачайте `ParadoxXx-4K-Tester.apk` в разделе [Releases](../../releases).
+2. Установите: `adb install ParadoxXx-4K-Tester.apk` или через файловый менеджер / Downloader.
+3. Запустите **ParadoxXx 4K Tester** с главного экрана Android TV.
+
+**Совместимость:** Android 5.0 и выше, любая архитектура (armv7, arm64, x86:
+в приложении нет нативных библиотек). Управление с пульта.
+**Требуется подключение к Интернету.**
+
+**Языки:** русский, французский и английский — по языку приставки (интерфейс и
+технический отчёт). Для остальных языков используется английский.
+
+### Как это работает
+1. **Скорость**: ~7 с загрузки с `repo.jellyfin.org`.
+2. **Проверка декодеров** (`MediaCodecList`) перед каждым видео: формат без декодера
+   (или неподдерживаемое 8K) сразу отмечается ❌, без загрузки.
+3. **Воспроизведение** каждого видео 10 с в потоке (ExoPlayer / Media3).
+   После 2 с разогрева приложение измеряет реально показанные кадры в секунду.
+4. **Итог**: ✅ при ≥ 92 % частоты кадров видео, ⚠️ при ≥ 24 кадр/с, ❌ ниже.
+
+### Сборка
+Репозиторий собирается через **GitHub Actions** (`.github/workflows/build.yml`):
+каждый push запускает workflow **Build APK**; APK скачивается во вкладке
+*Actions → run → Artifacts*.
+
+**Подпись:** если заданы секреты `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` и
+`KEY_PASSWORD` (*Settings → Secrets and variables → Actions*), APK подписывается этим
+постоянным ключом, и обновления устанавливаются поверх. Иначе используется временный
+отладочный ключ (перед каждым обновлением нужно удалить приложение).
+
+### Благодарности
+- Тестовые видео: **Jellyfin / Gnattu**, лицензия Creative Commons BY-SA.
+- Плеер: **AndroidX Media3 (ExoPlayer)**.
+- Перевод на русский: **Mr. SlimHouse** из команды **SlimboxTV** (порты Android TV для приставок
+  Amlogic / Allwinner / Realtek) — Telegram: [@mrSlimHouse](https://t.me/mrSlimHouse) ·
+  сайт: [slimboxtv.ru](https://slimboxtv.ru) · группа: [@slimbox_chat](https://t.me/slimbox_chat).
+- Разработка: **ParadoxXx Squad**.

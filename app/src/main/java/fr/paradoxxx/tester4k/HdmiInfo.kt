@@ -50,5 +50,7 @@ object HdmiInfo {
         return null
     }
 
-    fun label(m: Mode): String = "${m.width}x${m.height}" + (m.hz?.let { " à $it Hz" } ?: "")
+    fun label(m: Mode): String =
+        if (m.hz != null) L.s(R.string.hdmi_mode, m.width, m.height, m.hz)
+        else L.s(R.string.hdmi_mode_nohz, m.width, m.height)
 }

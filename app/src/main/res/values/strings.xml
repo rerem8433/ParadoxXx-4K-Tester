@@ -1,3 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Langue par défaut : anglais -->
 <resources>
-    <string name="app_name">ParadoxXx 4K Tester</string>
+    <string name="app_name" translatable="false">ParadoxXx 4K Tester</string>
+    <string name="home_intro">Find out what your box can really play:\nFull HD, 4K, HDR, Dolby Vision, 8K… and whether your connection keeps up.</string>
+    <string name="home_info">13 test videos · about 3 minutes · Internet connection required</string>
+    <string name="btn_resume">Resume at next test</string>
+    <string name="btn_start">Start the test</string>
+    <string name="credits">Test videos: Jellyfin / Gnattu — Creative Commons BY-SA license</string>
+    <string name="results_title">Results</string>
+    <string name="btn_details">Technical details</string>
+    <string name="btn_hide_details">Hide details</string>
+    <string name="btn_log">Report (log)</string>
+    <string name="btn_restart">Run the test again</string>
+    <string name="log_title">Technical report</string>
+    <string name="btn_copy">Copy the report</string>
+    <string name="btn_back">Back</string>
+    <string name="resume_note">⚠️ The previous run stopped abruptly at test %1$d/%2$d (%3$s): the box ran out of memory and Android closed the app.\nYou can resume from the next test.</string>
+    <string name="run_net_title">Measuring the connection…</string>
+    <string name="run_net_status">Downloading a sample for a few seconds</string>
+    <string name="run_net_result">Measured speed: %1$s Mb/s</string>
+    <string name="run_net_error">Connection: %1$s</string>
+    <string name="run_test_title">Test %1$d/%2$d — %3$s</string>
+    <string name="run_probe">Checking the decoder…</string>
+    <string name="run_skipped">Format not supported by this box — test skipped</string>
+    <string name="run_loading">Loading the video…</string>
+    <string name="run_playing">Playing: %1$d / 10 s</string>
+    <string name="details_title">Details of the %1$d tests</string>
+    <string name="log_saved">Also saved to: %1$s</string>
+    <string name="log_not_saved">Report not saved to storage</string>
+    <string name="copied">Report copied to the clipboard</string>
+    <string name="copy_failed">Copy failed</string>
+    <string name="hdr_detected">" · HDR10 screen detected"</string>
+    <string name="hdr_none">" · Screen without HDR"</string>
+    <string name="st_ok">Smooth playback</string>
+    <string name="st_minor">OK for movies and series</string>
+    <string name="st_fallback">Played as HDR10 (no Dolby Vision)</string>
+    <string name="st_network">Connection too slow</string>
+    <string name="st_stutter">Too choppy</string>
+    <string name="st_unsupported">Format not supported</string>
+    <string name="st_memory">Not enough memory (app closed by the system)</string>
+    <string name="st_unavailable">Test video unavailable</string>
+    <string name="why_no_decoder">No decoder for this format on this box</string>
+    <string name="why_size">The decoder says it cannot handle %1$d×%2$d</string>
+    <string name="dec_hw">" (hardware)"</string>
+    <string name="dec_sw">" (software)"</string>
+    <string name="d_decoder">Decoder: %1$s%2$s</string>
+    <string name="d_none">none</string>
+    <string name="d_fps">" · %1$s fps displayed out of %2$s"</string>
+    <string name="d_dropped">" · dropped frames: %1$d/%2$d"</string>
+    <string name="d_rebuf">" · buffering: %1$d"</string>
+    <string name="d_error">" · error: %1$s"</string>
+    <string name="d_noframe">" · no frame within 15 s"</string>
+    <string name="d_nosize">" · resolution not declared by the decoder"</string>
+    <string name="d_dv">No Dolby Vision decoder · played as HEVC/HDR10 instead · %1$s</string>
+    <string name="mem_kill">The system closed the app during this test: the box\'s memory (RAM) was full</string>
+    <string name="mem_skip">Not run: a previous 4K test already filled the box\'s memory</string>
+    <string name="hdmi_warn_title">HDMI output at %1$s</string>
+    <string name="hdmi_warn_text">50/60 fps videos will stutter and 4K results will be skewed. Set the resolution to a 60 Hz mode (e.g. 1920x1080p60) in Settings › Display › HDMI, then run the test again.</string>
+    <string name="hdmi_mode">%1$dx%2$d at %3$d Hz</string>
+    <string name="hdmi_mode_nohz" translatable="false">%1$dx%2$d</string>
+    <string name="mem_title">Not enough memory%1$s</string>
+    <string name="mem_ram">" (%1$d MB of RAM)"</string>
+    <string name="mem_text">4K fills this box\'s memory: Android closed the app during playback. Affected formats: %1$s. They may also crash other players.</string>
+    <string name="g_fhd" translatable="false">Full HD (1080p)</string>
+    <string name="g_uhd" translatable="false">4K</string>
+    <string name="g_hdr" translatable="false">HDR10</string>
+    <string name="g_dv" translatable="false">Dolby Vision</string>
+    <string name="g_8k" translatable="false">8K</string>
+    <string name="g_av1">AV1 (new YouTube / Netflix format)</string>
+    <string name="hdr_note_heavy">" · In 4K, converting HDR to a normal picture (your screen does not report HDR) is too heavy for this box."</string>
+    <string name="hdr_note_convert">" · Your screen does not report HDR: the picture will be converted."</string>
+    <string name="not_tested">Not tested</string>
+    <string name="formats">" — formats: %1$s"</string>
+    <string name="s_ok">Yes, perfectly smooth playback%1$s</string>
+    <string name="s_minor">Yes for movies and series, borderline for sports and 60 fps videos%1$s</string>
+    <string name="s_fallback">No, but the video plays as HDR10 instead</string>
+    <string name="s_network">Cannot be checked: the connection is too slow for this format</string>
+    <string name="s_stutter">No: the box is not powerful enough (choppy picture)</string>
+    <string name="s_memory">No: the box ran out of memory (the app was closed)</string>
+    <string name="s_memory_format">No: the box does not have enough memory for this format</string>
+    <string name="s_no_dv">No: no Dolby Vision on this box</string>
+    <string name="s_unsupported">No: format not supported by this box</string>
+    <string name="s_unavailable">Test impossible (test video unavailable)</string>
+    <string name="s_partial_uhd">" (not all formats)"</string>
+    <string name="s_partial_hdr">" (Full HD only)"</string>
+    <string name="av1_4k">Yes, up to 4K</string>
+    <string name="av1_fhd">Full HD only</string>
+    <string name="conn_title">Connection — %1$s</string>
+    <string name="conn_port">" (port %1$d Mb/s)"</string>
+    <string name="conn_none">No usable Internet connection (%1$s)</string>
+    <string name="conn_error">error</string>
+    <string name="conn_exc">Excellent: high-bitrate 4K plays without problems</string>
+    <string name="conn_good">Good: 4K streaming works</string>
+    <string name="conn_ok">Fair: Full HD OK, 4K risky</string>
+    <string name="conn_low">Weak: too slow for 4K, Full HD borderline</string>
+    <string name="tip_24">" · Tip: switch to 5 GHz Wi-Fi or plug in an Ethernet cable."</string>
+    <string name="tip_wifi">" · Tip: move the box closer to the router or plug in a cable."</string>
+    <string name="conn_line">%1$s Mb/s — %2$s%3$s</string>
+    <string name="c_eth">Ethernet cable</string>
+    <string name="c_wifi" translatable="false">Wi-Fi</string>
+    <string name="c_unknown">Unknown</string>
+    <string name="band_ghz">%1$s GHz</string>
+    <string name="t_fhd_h264" translatable="false">Full HD · H.264</string>
+    <string name="t_fhd_hevc" translatable="false">Full HD · HEVC</string>
+    <string name="t_fhd_hevc10">Full HD · HEVC 10-bit</string>
+    <string name="t_fhd_av1" translatable="false">Full HD · AV1</string>
+    <string name="t_uhd_h264" translatable="false">4K · H.264</string>
+    <string name="t_uhd_hevc" translatable="false">4K · HEVC</string>
+    <string name="t_uhd_hevc10">4K · HEVC 10-bit</string>
+    <string name="t_uhd_hevc10_80">4K · HEVC 10-bit high bitrate (80 Mb/s)</string>
+    <string name="t_uhd_av1" translatable="false">4K · AV1</string>
+    <string name="t_hdr_fhd" translatable="false">HDR10 · Full HD</string>
+    <string name="t_hdr_uhd" translatable="false">HDR10 · 4K</string>
+    <string name="t_dv">Dolby Vision · 4K (profile 8.1)</string>
+    <string name="t_8k" translatable="false">8K · HEVC</string>
+    <string name="f_h264" translatable="false">H.264</string>
+    <string name="f_hevc" translatable="false">HEVC</string>
+    <string name="f_hevc10">HEVC 10-bit</string>
+    <string name="f_hevc80">HEVC 80 Mb/s</string>
+    <string name="f_av1" translatable="false">AV1</string>
+    <string name="f_hdr_fhd" translatable="false">HDR10 1080p</string>
+    <string name="f_hdr_uhd" translatable="false">HDR10 4K</string>
+    <string name="f_dv" translatable="false">Dolby Vision 4K</string>
+    <string name="f_8k" translatable="false">HEVC 8K</string>
+    <string name="lg_date">Date: %1$s</string>
+    <string name="lg_box">--- Box ---</string>
+    <string name="lg_model">"Model     : %1$s"</string>
+    <string name="lg_android" translatable="false">"Android   : %1$s (API %2$d)"</string>
+    <string name="lg_hw">"Hardware  : %1$s · board %2$s%3$s"</string>
+    <string name="lg_soc" translatable="false">" · SoC %1$s %2$s"</string>
+    <string name="lg_cpu">"CPU ABI   : %1$s · %2$d cores"</string>
+    <string name="lg_ram">"RAM       : %1$d MB"</string>
+    <string name="lg_iface">Interface : %1$s (Android UI resolution, not necessarily what is sent to the TV)</string>
+    <string name="lg_hdmi">"HDMI      : %1$s (real output to the TV)"</string>
+    <string name="lg_hdmi_none">"HDMI      : mode unreadable"</string>
+    <string name="lg_fw">"Firmware  : %1$s"</string>
+    <string name="lg_conn">--- Connection ---</string>
+    <string name="lg_type">"Type      : %1$s"</string>
+    <string name="lg_port">" · port %1$d Mb/s"</string>
+    <string name="lg_speed">"Speed     : %1$s Mb/s"</string>
+    <string name="lg_speed_fail">"Speed     : failed (%1$s)"</string>
+    <string name="lg_summary">--- Summary ---</string>
+    <string name="lg_details">--- Test details ---</string>
+    <string name="lg_test">%1$d. %2$s %3$s [%4$s, %5$dx%6$d, %7$d Mb/s]</string>
+    <string name="lg_verdict">"   Verdict : %1$s"</string>
+    <string name="lg_decoders">--- Declared video decoders ---</string>
+    <string name="lg_unreadable">unreadable: %1$s</string>
+    <string name="lg_no_hdr">no HDR</string>
+    <string name="tl_probe">"   Probe   : decoder=%1$s present=%2$s resolution=%3$s hardware=%4$s profile10bit=%5$s"</string>
+    <string name="tl_notrun">"\n   Playback: not started"</string>
+    <string name="tl_play">"\n   Playback: 1st frame=%1$s played=%2$d ms measured=%3$d ms fps=%4$s/%5$s displayed=%6$d dropped=%7$d buffering=%8$d"</string>
+    <string name="tl_dec">"\n   Decoder : %1$s%2$s%3$s%4$s"</string>
+    <string name="tl_err">" · error=%1$s (%2$d)"</string>
+    <string name="tl_track">" · video track not supported"</string>
+    <string name="tl_timeout">" · timed out"</string>
+    <string name="tl_killed">"   Playback: app killed by the system during the test (lowmemorykiller likely)"</string>
+    <string name="tl_skipped">"   Playback: not started (memory filled during a previous 4K test)"</string>
 </resources>

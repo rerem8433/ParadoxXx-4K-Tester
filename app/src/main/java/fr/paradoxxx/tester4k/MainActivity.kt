@@ -56,6 +56,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        L.init(this)
         setContentView(R.layout.activity_main)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
@@ -110,9 +111,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val idx = TestCatalog.tests.sortedBy { if (it.is4kOrMore) 1 else 0 }.indexOf(snap.crashedTest) + 1
-        resumeNote.text = "⚠️ Le test précédent s'est arrêté brutalement au test $idx/${TestCatalog.tests.size} " +
-                "(${snap.crashedTest.label}) : le boîtier a manqué de mémoire et Android a fermé l'appli.\n" +
-                "Vous pouvez reprendre à partir du test suivant."
+        resumeNote.text = L.s(R.string.resume_note, idx, TestCatalog.tests.size, snap.crashedTest.label)
         resumeNote.visibility = View.VISIBLE
         btnResume.visibility = View.VISIBLE
         btnResume.requestFocus()
@@ -136,10 +135,11 @@ class MainActivity : AppCompatActivity() {
             val startIndex: Int
 
             if (resume == null) {
-                runTitle.text = "Mesure de la connexion…"
-                runStatus.text = "Téléchargement d'un échantillon pendant quelques secondes"
+                runTitle.text = L.s(R.string.run_net_title)
+                runStatus.text = L.s(R.string.run_net_status)
                 net = NetworkProbe.measure()
-                runStatus.text = if (net.ok) "Débit mesuré : ${Verdict.fmt(net.mbps)} Mb/s" else "Connexion : ${net.error}"
+                runStatus.text = if (net.ok) L.s(R.string.run_net_result, Verdict.fmt(net.mbps))
+                    else L.s(R.string.run_net_error, net.error ?: "?")
                 state.begin(net)
                 startIndex = 0
                 delay(1200)
@@ -155,8 +155,8 @@ class MainActivity : AppCompatActivity() {
 
             for (i in startIndex until tests.size) {
                 val t = tests[i]
-                runTitle.text = "Test ${i + 1}/${tests.size} — ${t.label}"
-                runStatus.text = "Vérification du décodeur…"
+                runTitle.text = L.s(R.string.run_test_title, i + 1, tests.size, t.label)
+                runStatus.text = L.s(R.string.run_probe)
                 val probe = CodecProbe.probe(t)
                 // On ne saute que l'absence totale de décodeur, ou une 8K que le décodeur refuse.
                 // Sinon on tente la lecture : les déclarations des firmwares sont souvent fausses.
@@ -173,14 +173,14 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val outcome = if (skip) {
-                    runStatus.text = "Format non pris en charge par ce boîtier — test ignoré"
+                    runStatus.text = L.s(R.string.run_skipped)
                     delay(1000)
                     null
                 } else {
-                    runStatus.text = "Chargement de la vidéo…"
+                    runStatus.text = L.s(R.string.run_loading)
                     state.markRunning(t)
                     tester.run(t.url) { played ->
-                        if (played > 0) runStatus.text = "Lecture : ${played / 1000} / 10 s"
+                        if (played > 0) runStatus.text = L.s(R.string.run_playing, (played / 1000).toInt())
                     }
                 }
                 out += Verdict.evaluate(t, probe, outcome, if (net.ok) net.mbps else 0.0)
@@ -191,7 +191,10 @@ class MainActivity : AppCompatActivity() {
             state.clear()
             lastResults = out.sortedBy { TestCatalog.tests.indexOf(it.test) }
             val hdmi = HdmiInfo.read()
-            lastSummary = Verdict.summary(lastResults, net, conn, displayHdr10(), hdmi, LogBuilder.ramMb(this@MainActivity))
+            val hdr = displayHdr10()
+            val ram = LogBuilder.ramMb(this@MainActivity)
+            lastSummary = Verdict.summary(lastResults, net, conn, hdr, hdmi, ram)
+            // Rapport dans la langue du boîtier (français par défaut)
             lastLog = LogBuilder.build(this@MainActivity, lastResults, lastSummary, net, conn)
             saveLog(lastLog)
             showDetails = false
@@ -213,14 +216,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderResults() {
         resultsHeader.text = deviceLine() + hdrLine()
-        btnDetails.text = if (showDetails) "Masquer les détails" else "Détails techniques"
+        btnDetails.text = L.s(if (showDetails) R.string.btn_hide_details else R.string.btn_details)
         resultsList.removeAllViews()
 
         for (l in lastSummary) {
             resultsList.addView(row("${l.icon}  ${l.title}", l.text, 22f, 17f))
         }
         if (showDetails) {
-            resultsList.addView(sectionTitle("Détail des ${lastResults.size} tests"))
+            resultsList.addView(sectionTitle(L.s(R.string.details_title, lastResults.size)))
             for (r in lastResults) {
                 resultsList.addView(row("${r.status.icon}  ${r.test.label} — ${r.status.label}", r.detail, 17f, 14f))
             }
@@ -271,7 +274,7 @@ class MainActivity : AppCompatActivity() {
         logText.text = lastLog
         val f = logFile()
         logPath.text = if (f != null && f.exists())
-            "Aussi enregistré dans : ${f.absolutePath}" else "Rapport non enregistré sur le stockage"
+            L.s(R.string.log_saved, f.absolutePath) else L.s(R.string.log_not_saved)
         show(logPanel)
         findViewById<ScrollView>(R.id.logScroll).scrollTo(0, 0)
         findViewById<Button>(R.id.btnCopy).requestFocus()
@@ -281,9 +284,9 @@ class MainActivity : AppCompatActivity() {
         try {
             val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             cm.setPrimaryClip(ClipData.newPlainText("ParadoxXx 4K Tester", lastLog))
-            Toast.makeText(this, "Rapport copié dans le presse-papiers", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, L.s(R.string.copied), Toast.LENGTH_LONG).show()
         } catch (_: Exception) {
-            Toast.makeText(this, "Copie impossible", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, L.s(R.string.copy_failed), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -297,8 +300,8 @@ class MainActivity : AppCompatActivity() {
         "${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE} · ${Build.HARDWARE}"
 
     private fun hdrLine(): String = when (displayHdr10()) {
-        true -> " · Écran HDR10 détecté"
-        false -> " · Écran sans HDR"
+        true -> L.s(R.string.hdr_detected)
+        false -> L.s(R.string.hdr_none)
         null -> ""
     }
 

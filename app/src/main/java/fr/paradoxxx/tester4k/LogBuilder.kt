@@ -25,41 +25,43 @@ object LogBuilder {
         } catch (_: Exception) { "?" }
 
         appendLine("=== ParadoxXx 4K Tester $version ===")
-        appendLine("Date : " + SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.FRANCE).format(Date()))
+        appendLine(L.s(R.string.lg_date, SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.FRANCE).format(Date())))
         appendLine()
 
-        appendLine("--- Boîtier ---")
-        appendLine("Modèle    : ${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE})")
-        appendLine("Android   : ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
-        appendLine("Hardware  : ${Build.HARDWARE} · board ${Build.BOARD}" +
-                if (Build.VERSION.SDK_INT >= 31) " · SoC ${Build.SOC_MANUFACTURER} ${Build.SOC_MODEL}" else "")
-        appendLine("CPU ABI   : ${Build.SUPPORTED_ABIS.joinToString()} · ${Runtime.getRuntime().availableProcessors()} cœurs")
-        appendLine("RAM       : ${ramMb(ctx)} Mo")
-        appendLine("Interface : ${display(ctx)} (résolution de l'interface Android, pas forcément celle envoyée à la TV)")
-        appendLine("HDMI      : " + (HdmiInfo.read()?.let { "${HdmiInfo.label(it)} (sortie réelle vers la TV)" } ?: "mode non lisible"))
-        appendLine("Firmware  : ${Build.DISPLAY}")
+        appendLine(L.s(R.string.lg_box))
+        appendLine(L.s(R.string.lg_model, "${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE})"))
+        appendLine(L.s(R.string.lg_android, Build.VERSION.RELEASE, Build.VERSION.SDK_INT))
+        val soc = if (Build.VERSION.SDK_INT >= 31) L.s(R.string.lg_soc, Build.SOC_MANUFACTURER, Build.SOC_MODEL) else ""
+        appendLine(L.s(R.string.lg_hw, Build.HARDWARE, Build.BOARD, soc))
+        appendLine(L.s(R.string.lg_cpu, Build.SUPPORTED_ABIS.joinToString(), Runtime.getRuntime().availableProcessors()))
+        appendLine(L.s(R.string.lg_ram, ramMb(ctx)))
+        appendLine(L.s(R.string.lg_iface, display(ctx)))
+        appendLine(HdmiInfo.read()?.let { L.s(R.string.lg_hdmi, HdmiInfo.label(it)) } ?: L.s(R.string.lg_hdmi_none))
+        appendLine(L.s(R.string.lg_fw, Build.DISPLAY))
         appendLine()
 
-        appendLine("--- Connexion ---")
-        appendLine("Type      : ${conn.type}" +
-                (conn.wifiBand?.let { " $it" } ?: "") +
-                (conn.ethernetSpeed?.let { " · port $it Mb/s" } ?: ""))
-        appendLine("Débit     : " + if (net.ok) "${Verdict.fmt(net.mbps)} Mb/s" else "échec (${net.error})")
+        appendLine(L.s(R.string.lg_conn))
+        appendLine(L.s(R.string.lg_type, conn.type +
+                (conn.bandLabel?.let { " $it" } ?: "") +
+                (conn.ethernetSpeed?.let { L.s(R.string.lg_port, it) } ?: "")))
+        appendLine(if (net.ok) L.s(R.string.lg_speed, Verdict.fmt(net.mbps))
+                   else L.s(R.string.lg_speed_fail, net.error ?: "?"))
         appendLine()
 
-        appendLine("--- Résumé ---")
+        appendLine(L.s(R.string.lg_summary))
         summary.forEach { appendLine("${it.icon} ${it.title} : ${it.text}") }
         appendLine()
 
-        appendLine("--- Détail des tests ---")
+        appendLine(L.s(R.string.lg_details))
         results.forEachIndexed { i, r ->
-            appendLine("${i + 1}. ${r.status.icon} ${r.test.label} [${r.test.mime}, ${r.test.width}x${r.test.height}, ${r.test.bitrateMbps} Mb/s]")
-            appendLine("   Verdict : ${r.status.label}")
+            appendLine(L.s(R.string.lg_test, i + 1, r.status.icon, r.test.label, r.test.mime,
+                r.test.width, r.test.height, r.test.bitrateMbps))
+            appendLine(L.s(R.string.lg_verdict, r.status.label))
             appendLine(r.logLines)
         }
         appendLine()
 
-        appendLine("--- Décodeurs vidéo déclarés ---")
+        appendLine(L.s(R.string.lg_decoders))
         decoders().forEach { appendLine(it) }
     }
 
@@ -79,7 +81,7 @@ object LogBuilder {
         } else "?"
         val hdr = if (Build.VERSION.SDK_INT >= 24) {
             val types = d.hdrCapabilities?.supportedHdrTypes ?: IntArray(0)
-            if (types.isEmpty()) "sans HDR" else "HDR " + types.joinToString(",") {
+            if (types.isEmpty()) L.s(R.string.lg_no_hdr) else "HDR " + types.joinToString(",") {
                 when (it) {
                     Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION -> "DV"
                     Display.HdrCapabilities.HDR_TYPE_HDR10 -> "HDR10"
@@ -105,5 +107,5 @@ object LogBuilder {
                     "$hw  ${info.name}  $type  $size"
                 }
             }
-    } catch (e: Exception) { listOf("illisible : ${e.javaClass.simpleName}") }
+    } catch (e: Exception) { listOf(L.s(R.string.lg_unreadable, e.javaClass.simpleName)) }
 }

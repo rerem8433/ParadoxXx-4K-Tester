@@ -22,7 +22,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ParadoxXx 4K Tester"
+                android:text="@string/app_name"
                 android:textColor="@color/text"
                 android:textSize="40sp"
                 android:textStyle="bold" />
@@ -32,7 +32,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:gravity="center"
-                android:text="Découvrez ce que votre boîtier peut vraiment lire :\nFull HD, 4K, HDR, Dolby Vision, 8K… et si votre connexion suit."
+                android:text="@string/home_intro"
                 android:textColor="@color/text"
                 android:textSize="20sp" />
 
@@ -40,7 +40,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="13 vidéos de test · environ 3 minutes · connexion Internet requise"
+                android:text="@string/home_info"
                 android:textColor="@color/muted"
                 android:textSize="16sp" />
 
@@ -66,7 +66,7 @@
                 android:paddingTop="14dp"
                 android:paddingRight="48dp"
                 android:paddingBottom="14dp"
-                android:text="Reprendre au test suivant"
+                android:text="@string/btn_resume"
                 android:textAllCaps="false"
                 android:textColor="@color/text"
                 android:textSize="22sp"
@@ -82,7 +82,7 @@
                 android:paddingTop="14dp"
                 android:paddingRight="48dp"
                 android:paddingBottom="14dp"
-                android:text="Lancer le test"
+                android:text="@string/btn_start"
                 android:textAllCaps="false"
                 android:textColor="@color/text"
                 android:textSize="22sp" />
@@ -101,7 +101,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
-                android:text="Vidéos de test : Jellyfin / Gnattu — licence Creative Commons BY-SA"
+                android:text="@string/credits"
                 android:textColor="@color/muted"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -172,7 +172,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Résultats"
+            android:text="@string/results_title"
             android:textColor="@color/text"
             android:textSize="30sp"
             android:textStyle="bold" />
@@ -213,7 +213,7 @@
                 android:background="@drawable/btn_bg"
                 android:paddingLeft="28dp"
                 android:paddingRight="28dp"
-                android:text="Détails techniques"
+                android:text="@string/btn_details"
                 android:textAllCaps="false"
                 android:textColor="@color/text"
                 android:textSize="18sp" />
@@ -226,7 +226,7 @@
                 android:background="@drawable/btn_bg"
                 android:paddingLeft="28dp"
                 android:paddingRight="28dp"
-                android:text="Rapport (log)"
+                android:text="@string/btn_log"
                 android:textAllCaps="false"
                 android:textColor="@color/text"
                 android:textSize="18sp" />
@@ -239,7 +239,7 @@
                 android:background="@drawable/btn_bg"
                 android:paddingLeft="28dp"
                 android:paddingRight="28dp"
-                android:text="Refaire le test"
+                android:text="@string/btn_restart"
                 android:textAllCaps="false"
                 android:textColor="@color/text"
                 android:textSize="18sp" />
@@ -261,7 +261,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Rapport technique"
+            android:text="@string/log_title"
             android:textColor="@color/text"
             android:textSize="26sp"
             android:textStyle="bold" />
@@ -308,7 +308,7 @@
                 android:background="@drawable/btn_bg"
                 android:paddingLeft="28dp"
                 android:paddingRight="28dp"
-                android:text="Copier le rapport"
+                android:text="@string/btn_copy"
                 android:textAllCaps="false"
                 android:textColor="@color/text"
                 android:textSize="18sp" />
@@ -321,7 +321,7 @@
                 android:background="@drawable/btn_bg"
                 android:paddingLeft="28dp"
                 android:paddingRight="28dp"
-                android:text="Retour"
+                android:text="@string/btn_back"
                 android:textAllCaps="false"
                 android:textColor="@color/text"
                 android:textSize="18sp" />
